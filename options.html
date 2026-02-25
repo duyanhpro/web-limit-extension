@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Options - Web Limit</title>
+    <link rel="stylesheet" href="options.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <svg fill="currentColor" viewBox="0 0 24 24" class="logo-icon">
+                    <path
+                        d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z" />
+                    <path d="M13 7h-2v6h6v-2h-4z" />
+                </svg>
+                <span>Web Limit</span>
+            </div>
+            <nav class="nav">
+                <a href="#" class="nav-item active" id="navPolicies">Policies</a>
+                <a href="#" class="nav-item" id="navSettings">Settings</a>
+                <a href="#" class="nav-item" id="navReports">Reports</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <div id="policiesSection">
+                <header class="header">
+                    <h1>Manage Policies</h1>
+                    <button id="addPolicyBtn" class="btn btn-primary">+ New Policy</button>
+                </header>
+                <div id="policiesList" class="policies-grid">
+                    <!-- Policies will be rendered here -->
+                </div>
+            </div>
+
+            <div id="settingsSection" class="hidden">
+                <header class="header">
+                    <h1>Settings</h1>
+                </header>
+                <div class="settings-card">
+                    <div class="setting-item">
+                        <div>
+                            <h3>Typing Challenge on Modification</h3>
+                            <p>Require typing a 100-word paragraph flawlessly before changing or deleting an existing
+                                policy.</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="challengeToggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="reportsSection" class="hidden">
+                <header class="header" style="justify-content: space-between; align-items: center;">
+                    <h1>Usage Reports</h1>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="clearDaysInput" style="font-size: 14px; margin: 0;">Clear older than (days):</label>
+                        <input type="number" id="clearDaysInput" value="7" min="1" class="form-control"
+                            style="width: 60px; padding: 4px; margin-bottom: 0;">
+                        <button id="clearReportsBtn" class="btn btn-danger"
+                            style="padding: 6px 12px; font-size: 13px;">Clear Data</button>
+                    </div>
+                </header>
+                <div id="reportsList" class="reports-container">
+                    <!-- Reports rendered dynamically -->
+                </div>
+            </div>
+
+            <!-- Policy Editor Modal -->
+            <div id="policyModal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 id="modalTitle">Edit Policy</h2>
+                        <button id="closeModal" class="close-btn">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="policyId">
+                        <input type="hidden" id="isNewPolicy" value="false">
+
+                        <div class="form-group">
+                            <label for="policyName">Policy Name</label>
+                            <input type="text" id="policyName" placeholder="e.g. Social Media Limits"
+                                class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="policyMatches">Websites (Wildcards allowed, separated by comma)</label>
+                            <textarea id="policyMatches" placeholder="*://*.youtube.com/*, *://*.facebook.com/*"
+                                class="form-control" rows="3"></textarea>
+                            <small class="helper-text">Supports exact domains and wildcards (e.g.
+                                *://*.tiktok.com/*).</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="trackingMode">Limit Tracking Strategy</label>
+                            <select id="trackingMode" class="form-control">
+                                <option value="aggregate">Aggregate Time (Combine time spent on all listed websites)
+                                </option>
+                                <option value="per-site">Per-Website Time (Track time independently for each matched
+                                    website)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="maxPauses">Max Pauses / Day</label>
+                                <input type="number" id="maxPauses" min="0" value="1" class="form-control">
+                            </div>
+                            <div class="form-group half">
+                                <label for="pauseDuration">Pause Duration (Mins)</label>
+                                <input type="number" id="pauseDuration" min="1" value="5" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="rules-section">
+                            <div class="rules-header">
+                                <h3>Time Rules</h3>
+                                <button id="addRuleBtn" class="btn btn-secondary btn-sm">+ Add Rule</button>
+                            </div>
+                            <div id="rulesList" class="rules-list">
+                                <!-- Rules rendered dynamically -->
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button id="deletePolicyBtn" class="btn btn-danger hidden">Delete Policy</button>
+                        <div class="footer-actions">
+                            <button id="cancelModalBtn" class="btn btn-secondary">Cancel</button>
+                            <button id="savePolicyBtn" class="btn btn-primary">Save Policy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Challenge Modal -->
+            <div id="challengeModal" class="modal hidden">
+                <div class="modal-content" style="max-width: 700px;">
+                    <div class="modal-header">
+                        <h2>Authentication Challenge</h2>
+                        <button id="closeChallengeModal" class="close-btn">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p style="margin-bottom: 20px; color: #475569;">To prove you really want to make this change,
+                            type the following text exactly as shown. <strong>Up to 2% mistakes allowed.</strong></p>
+                        <div id="challengeText" class="challenge-text" oncopy="return false" oncut="return false"
+                            onpaste="return false"></div>
+                        <textarea id="challengeInput" class="form-control challenge-input" rows="8"
+                            placeholder="Start typing here..." oncopy="return false" oncut="return false"
+                            onpaste="return false" spellcheck="false"></textarea>
+                        <div id="challengeError" class="challenge-error hidden">Mistake detected! Start over.</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="options.js"></script>
+</body>
+
+</html>

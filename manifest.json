@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Web Limit Extension",
+  "version": "1.0",
+  "description": "Limit access to certain websites by duration for different times of the day with pause features.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "alarms",
+    "idle"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Web Limit"
+  },
+  "options_page": "options.html",
+  "icons": {
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}

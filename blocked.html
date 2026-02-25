@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Access Limited - Web Limit</title>
+  <link rel="stylesheet" href="blocked.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <div class="glass-panel">
+      <div class="icon-pulse">
+        <svg fill="currentColor" viewBox="0 0 24 24" class="lock-icon">
+          <path d="M12 2C9.243 2 7 4.243 7 7v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7c0-2.757-2.243-5-5-5zm-3 5c0-1.654 1.346-3 3-3s3 1.346 3 3v3H9V7zm3 10c-1.103 0-2-.897-2-2s.897-2 2-2 2 .897 2 2-.897 2-2 2z"/>
+        </svg>
+      </div>
+      <h1 class="title">Time's Up!</h1>
+      <p class="subtitle">You have reached your daily limit for this website.</p>
+      
+      <div class="site-info">
+        <span id="originalUrl">Loading...</span>
+      </div>
+
+      <div class="pause-section" id="pauseSection">
+        <p class="pause-text">Need a few more minutes? You have <strong id="pausesLeft">0</strong> pauses left today.</p>
+        <button id="pauseButton" class="btn primary-btn">
+          <span>Pause Block for 5 Minutes</span>
+          <div class="shimmer"></div>
+        </button>
+      </div>
+      
+      <div class="no-pauses-section hidden" id="noPausesSection">
+        <p class="pause-text text-red">You have used all your pauses for today.</p>
+      </div>
+
+      <a href="options.html" class="settings-link" target="_blank">Manage Policies</a>
+    </div>
+  </div>
+  <script src="blocked.js"></script>
+</body>
+</html>
