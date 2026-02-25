@@ -218,14 +218,15 @@ function matchUrl(url, patterns) {
 function getMatchedPattern(url, patterns) {
   try {
     const urlObj = new URL(url);
-    const hostname = urlObj.hostname.toLowerCase();
+    // Combine hostname, pathname, and search params for deep matching (e.g. 'youtube.com/shorts')
+    const fullPath = (urlObj.hostname + urlObj.pathname + urlObj.search).toLowerCase();
 
     for (const pattern of patterns) {
       // Remove any asterisks the user might have typed to get the core string
       const coreString = pattern.replace(/\*/g, '').toLowerCase();
 
-      // Match if the hostname contains the core string (e.g. 'youtube.com' inside 'www.youtube.com')
-      if (hostname.includes(coreString)) {
+      // Match if the full path contains the core string
+      if (fullPath.includes(coreString)) {
         return pattern;
       }
     }
