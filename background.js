@@ -3,7 +3,7 @@ const DEFAULT_POLICIES = [
   {
     id: 'policy_social_media',
     name: 'Social Media Limits',
-    matches: ['*://*.youtube.com/*', '*://*.facebook.com/*', '*://*.twitter.com/*', '*://*.x.com/*', '*://*.instagram.com/*', '*://*.tiktok.com/*'],
+    matches: ['*youtube.com*', '*facebook.com*', '*twitter.com*', '*x.com*', '*instagram.com*', '*tiktok.com*'],
     trackingMode: 'aggregate', // 'aggregate' or 'per-site'
     rules: [
       {

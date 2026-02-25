@@ -4,7 +4,7 @@ An advanced, highly-customizable Chrome Extension built on Manifest V3 designed 
 
 ## Features
 
-*   **Custom Limit Policies:** Create multiple policies grouping various websites (using exact domains or wildcards like `*://*.youtube.com/*`).
+*   **Custom Limit Policies:** Create multiple policies grouping various websites (using exact domains or wildcards like `*youtube.com*`).
 *   **Time-Based Rules:** Set daily limits, time-of-day windows (e.g., limit social media from 9 AM to 5 PM), and customize rules based on the day of the week (e.g., stricter limits on weekdays than weekends).
 *   **Limit Tracking Strategies:**
     *   **Aggregate Time:** Pool your time allowance across an entire category of sites.
@@ -39,7 +39,7 @@ Một tiện ích mở rộng Chrome tiên tiến, dễ dàng tùy chỉnh, đư
 
 ## Các Tính Năng Chính
 
-*   **Chính Sách Hạn Chế Tùy Chỉnh:** Tạo nhiều chính sách, nhóm các trang web khác nhau lại (sử dụng tên miền chính xác hoặc ký tự đại diện như `*://*.youtube.com/*`).
+*   **Chính Sách Hạn Chế Tùy Chỉnh:** Tạo nhiều chính sách, nhóm các trang web khác nhau lại (sử dụng tên miền chính xác hoặc ký tự đại diện như `*youtube.com*`).
 *   **Quy Tắc Theo Thời Gian:** Thiết lập giới hạn theo ngày, khung giờ trong ngày (ví dụ: giới hạn mạng xã hội từ 8 giờ sáng đến 5 giờ chiều), và tùy chỉnh lịch biểu theo các ngày trong tuần (ví dụ: siết chặt giới hạn vào các ngày trong tuần so với cuối tuần).
 *   **Chiến Lược Theo Dõi Giới Hạn:**
     *   **Thời Gian Tổng Hợp (Aggregate):** Gộp chung thời gian cho phép sử dụng trên toàn bộ danh mục trang web.
