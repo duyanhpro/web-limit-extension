@@ -218,10 +218,14 @@ function matchUrl(url, patterns) {
 function getMatchedPattern(url, patterns) {
   try {
     const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+
     for (const pattern of patterns) {
-      const regexStr = pattern.replace(/\./g, '\\.').replace(/\*/g, '.*');
-      const regex = new RegExp(`^${regexStr}$`, 'i');
-      if (regex.test(url)) {
+      // Remove any asterisks the user might have typed to get the core string
+      const coreString = pattern.replace(/\*/g, '').toLowerCase();
+
+      // Match if the hostname contains the core string (e.g. 'youtube.com' inside 'www.youtube.com')
+      if (hostname.includes(coreString)) {
         return pattern;
       }
     }
