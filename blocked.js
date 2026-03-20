@@ -12,10 +12,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (response && response.policy) {
         const policy = response.policy;
         const usage = response.usage;
+        const pausesEnabled = policy.pauseSettings?.enabled !== false;
         const maxPauses = policy.pauseSettings?.maxPausesPerDay || 0;
         const pausesUsed = usage.pausesUsed || 0;
 
-        if (pausesUsed < maxPauses) {
+        if (!pausesEnabled) {
+            document.getElementById('pauseSection').classList.add('hidden');
+            document.getElementById('noPausesSection').classList.add('hidden');
+        } else if (pausesUsed < maxPauses) {
             document.getElementById('pausesLeft').innerText = maxPauses - pausesUsed;
             document.getElementById('pauseSection').classList.remove('hidden');
             document.getElementById('noPausesSection').classList.add('hidden');

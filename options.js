@@ -45,7 +45,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('closeChallengeModal').addEventListener('click', closeChallenge);
     const challengeInput = document.getElementById('challengeInput');
     challengeInput.addEventListener('input', handleChallengeInput);
+
+    // Toggle pause settings visibility
+    document.getElementById('pauseEnabled').addEventListener('change', (e) => {
+        togglePauseSettings(e.target.checked);
+    });
 });
+
+function togglePauseSettings(enabled) {
+    const container = document.getElementById('pauseSettingsContainer');
+    if (enabled) {
+        container.style.opacity = '1';
+        container.style.pointerEvents = 'auto';
+    } else {
+        container.style.opacity = '0.3';
+        container.style.pointerEvents = 'none';
+    }
+}
 
 function switchTab(e, sectionId) {
     if (e) e.preventDefault();
@@ -203,15 +219,17 @@ function renderPolicies() {
         const domainsStr = (policy.matches || []).join(', ');
 
         const trackingBadgeStr = policy.trackingMode === 'per-site' ? '<span style="font-size:10px; padding:2px 6px; border-radius:10px; background:#e0e7ff; color:#3730a3; margin-left: 6px;">Per-Website</span>' : '<span style="font-size:10px; padding:2px 6px; border-radius:10px; background:#f1f5f9; color:#475569; margin-left: 6px;">Aggregate</span>';
+        const disabledBadgeStr = policy.enabled === false ? '<span style="font-size:10px; padding:2px 6px; border-radius:10px; background:#fee2e2; color:#b91c1c; margin-left: 6px;">Disabled</span>' : '';
 
         card.innerHTML = `
       <div class="policy-name" style="display:flex; align-items:center;">
         ${escapeHtml(policy.name)} 
         ${trackingBadgeStr}
+        ${disabledBadgeStr}
       </div>
       <div class="policy-domains">${escapeHtml(domainsStr)}</div>
       <div class="policy-rules-summary">
-        ${rulesCount} rule(s) • ${policy.pauseSettings?.maxPausesPerDay || 0} pauses/day
+        ${rulesCount} rule(s) • ${policy.pauseSettings?.enabled !== false ? (policy.pauseSettings?.maxPausesPerDay || 0) + ' pauses/day' : 'Pauses disabled'}
       </div>
     `;
 
@@ -233,9 +251,13 @@ function openModal(policy = null) {
         document.getElementById('policyName').value = policy.name;
         document.getElementById('policyMatches').value = (policy.matches || []).join(', ');
         document.getElementById('trackingMode').value = policy.trackingMode || 'aggregate';
+        document.getElementById('policyEnabled').checked = policy.enabled !== false;
+        document.getElementById('pauseEnabled').checked = policy.pauseSettings?.enabled !== false;
         document.getElementById('maxPauses').value = policy.pauseSettings?.maxPausesPerDay || 0;
         document.getElementById('pauseDuration').value = policy.pauseSettings?.durationMinutes || 0;
         isNewInput.value = 'false';
+
+        togglePauseSettings(policy.pauseSettings?.enabled !== false);
 
         if (policy.rules) {
             policy.rules.forEach(rule => addRuleRow(rule));
@@ -247,9 +269,12 @@ function openModal(policy = null) {
         document.getElementById('policyName').value = '';
         document.getElementById('policyMatches').value = '';
         document.getElementById('trackingMode').value = 'aggregate';
+        document.getElementById('policyEnabled').checked = true;
+        document.getElementById('pauseEnabled').checked = true;
         document.getElementById('maxPauses').value = '1';
         document.getElementById('pauseDuration').value = '5';
         isNewInput.value = 'true';
+        togglePauseSettings(true);
         addRuleRow(); // Add one empty rule
         deleteBtn.classList.add('hidden');
     }
@@ -411,6 +436,8 @@ async function executeSave() {
 
     const maxPauses = parseInt(document.getElementById('maxPauses').value, 10) || 0;
     const prevDuration = parseInt(document.getElementById('pauseDuration').value, 10) || 0;
+    const policyEnabled = document.getElementById('policyEnabled').checked;
+    const pauseEnabled = document.getElementById('pauseEnabled').checked;
 
     const rules = [];
     document.querySelectorAll('.rule-item').forEach(row => {
@@ -436,10 +463,12 @@ async function executeSave() {
     const policy = {
         id,
         name,
+        enabled: policyEnabled,
         matches,
         trackingMode,
         rules,
         pauseSettings: {
+            enabled: pauseEnabled,
             maxPausesPerDay: maxPauses,
             durationMinutes: prevDuration
         }

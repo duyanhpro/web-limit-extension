@@ -3,6 +3,7 @@ const DEFAULT_POLICIES = [
   {
     id: 'policy_social_media',
     name: 'Social Media Limits',
+    enabled: true,
     matches: ['*youtube.com*', '*facebook.com*', '*twitter.com*', '*x.com*', '*instagram.com*', '*tiktok.com*'],
     trackingMode: 'aggregate', // 'aggregate' or 'per-site'
     rules: [
@@ -22,6 +23,7 @@ const DEFAULT_POLICIES = [
       }
     ],
     pauseSettings: {
+      enabled: true,
       maxPausesPerDay: 1,
       durationMinutes: 5
     }
@@ -124,6 +126,40 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   }
 });
 
+chrome.storage.onChanged.addListener(async (changes, area) => {
+  if (area === 'local' && changes.policies) {
+    // Policies updated, re-evaluate current tab
+    const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (tabs.length > 0) {
+      await handleTabChange(tabs[0]);
+    }
+
+    // Also check all tabs to see if any should be unblocked because a policy was disabled
+    const allTabs = await chrome.tabs.query({});
+    const policies = changes.policies.newValue || [];
+    
+    for (const tab of allTabs) {
+      if (tab.url && tab.url.includes(chrome.runtime.getURL('blocked.html'))) {
+        try {
+          const urlObj = new URL(tab.url);
+          const policyId = urlObj.searchParams.get('policyId');
+          const originalUrl = urlObj.searchParams.get('url');
+          
+          if (policyId && originalUrl) {
+            const policy = policies.find(p => p.id === policyId);
+            // If policy no longer exists or is disabled, unblock
+            if (!policy || policy.enabled === false) {
+              chrome.tabs.update(tab.id, { url: originalUrl });
+            }
+          }
+        } catch (e) {
+          // ignore invalid URLs
+        }
+      }
+    }
+  }
+});
+
 chrome.windows.onFocusChanged.addListener(async (windowId) => {
   await updateActiveTime();
   if (windowId === chrome.windows.WINDOW_ID_NONE) {
@@ -157,7 +193,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function handleTabChange(tab) {
   const activeTabInfo = await getActiveTabInfo();
 
-  if (!tab.url || !tab.url.startsWith('http')) {
+  if (!tab.url || !tab.url.startsWith('http') && !tab.url.includes(chrome.runtime.getURL('blocked.html'))) {
     activeTabInfo.tabId = tab.id;
     activeTabInfo.url = null;
     activeTabInfo.policyId = null;
@@ -165,6 +201,24 @@ async function handleTabChange(tab) {
     await setActiveTabInfo(activeTabInfo);
     chrome.action.setIcon({ path: "icon_inactive.png", tabId: tab.id }).catch(() => { });
     return;
+  }
+
+  // Handle case where we are already on the blocked page
+  if (tab.url.includes(chrome.runtime.getURL('blocked.html'))) {
+    try {
+      const urlObj = new URL(tab.url);
+      const policyId = urlObj.searchParams.get('policyId');
+      const originalUrl = urlObj.searchParams.get('url');
+      if (policyId && originalUrl) {
+        const policies = await getPolicies();
+        const policy = policies.find(p => p.id === policyId);
+        if (!policy || policy.enabled === false) {
+          // Policy disabled or removed, redirect back
+          chrome.tabs.update(tab.id, { url: originalUrl });
+          return;
+        }
+      }
+    } catch (e) { }
   }
 
   activeTabInfo.tabId = tab.id;
@@ -193,7 +247,7 @@ function findStrictestPolicy(url, policies) {
   let strictestPolicy = null;
   let strictestLimit = Infinity;
 
-  const matchingPolicies = policies.filter(policy => policy.matches && matchUrl(url, policy.matches));
+  const matchingPolicies = policies.filter(policy => policy.enabled !== false && policy.matches && matchUrl(url, policy.matches));
 
   if (matchingPolicies.length === 0) return null;
 
@@ -294,7 +348,11 @@ async function updateActiveTime() {
     const policies = await getPolicies();
     const policy = policies.find(p => p.id === activeTabInfo.policyId);
 
-    if (!policy) return;
+    if (!policy || policy.enabled === false) {
+      activeTabInfo.policyId = null;
+      await setActiveTabInfo(activeTabInfo);
+      return;
+    }
 
     if (!usageData[today]) usageData[today] = {};
     if (!usageData[today][activeTabInfo.policyId]) {
@@ -362,7 +420,11 @@ async function enforceLimits() {
 
   const policies = await getPolicies();
   const policy = policies.find(p => p.id === activeTabInfo.policyId);
-  if (!policy) return;
+  if (!policy || policy.enabled === false) {
+    activeTabInfo.policyId = null;
+    await setActiveTabInfo(activeTabInfo);
+    return;
+  }
 
   const usage = await getTodayUsage(policy.id);
 
@@ -455,7 +517,12 @@ async function handleRequestPause(url) {
   const today = getTodayString();
   const usage = usageData[today]?.[policy.id] || { timeSpentSeconds: 0, perSiteTimeSpentSeconds: {}, pausesUsed: 0, activePauseUntil: null };
 
+  const pauseEnabled = policy.pauseSettings?.enabled !== false;
   const maxPauses = policy.pauseSettings?.maxPausesPerDay || 0;
+
+  if (!pauseEnabled) {
+    return { success: false, error: 'Pauses are disabled for this policy.' };
+  }
 
   if (usage.pausesUsed >= maxPauses) {
     return { success: false, error: 'Maximum daily pauses reached.' };

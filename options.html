@@ -83,6 +83,14 @@
                         <input type="hidden" id="policyId">
                         <input type="hidden" id="isNewPolicy" value="false">
 
+                        <div class="form-group" style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+                            <label class="switch">
+                                <input type="checkbox" id="policyEnabled" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span style="font-weight: 600; color: #1e293b;">Policy Enabled</span>
+                        </div>
+
                         <div class="form-group">
                             <label for="policyName">Policy Name</label>
                             <input type="text" id="policyName" placeholder="e.g. Social Media Limits"
@@ -107,7 +115,15 @@
                             </select>
                         </div>
 
-                        <div class="form-row">
+                        <div class="form-group" style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                            <label class="switch">
+                                <input type="checkbox" id="pauseEnabled" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span style="font-weight: 500; color: #475569;">Enable Pause (Allow users to temporarily unblock)</span>
+                        </div>
+
+                        <div id="pauseSettingsContainer" class="form-row">
                             <div class="form-group half">
                                 <label for="maxPauses">Max Pauses / Day</label>
                                 <input type="number" id="maxPauses" min="0" value="1" class="form-control">
