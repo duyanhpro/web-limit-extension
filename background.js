@@ -366,6 +366,16 @@ async function updateActiveTime() {
 
     const usage = usageData[today][activeTabInfo.policyId];
 
+    // Only accumulate time when inside an active time slot.
+    // If no rule matches the current time, getCurrentRuleLimit returns Infinity,
+    // meaning we're outside all defined time slots and should not count usage.
+    const currentLimit = getCurrentRuleLimit(policy);
+    if (currentLimit === Infinity) {
+      activeTabInfo.startTime = now;
+      await setActiveTabInfo(activeTabInfo);
+      return;
+    }
+
     const matchedPattern = getMatchedPattern(activeTabInfo.url, policy.matches);
     if (matchedPattern) {
       if (!usage.perSiteTimeSpentSeconds[matchedPattern]) {

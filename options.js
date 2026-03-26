@@ -15,6 +15,9 @@ let currentChallengeText = "";
 document.addEventListener('DOMContentLoaded', async () => {
     await loadData();
 
+    const { version } = chrome.runtime.getManifest();
+    document.getElementById('extensionVersion').textContent = `v${version}`;
+
     // Navigation
     document.getElementById('navPolicies').addEventListener('click', (e) => switchTab(e, 'policiesSection'));
     document.getElementById('navSettings').addEventListener('click', (e) => switchTab(e, 'settingsSection'));
