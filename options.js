@@ -1,6 +1,71 @@
+// Fallback mock for chrome extension APIs when running outside the extension environment (e.g. local preview)
+if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.storage) {
+    window.chrome = {
+        runtime: {
+            getManifest: () => ({ version: '1.0.0-mock' }),
+            sendMessage: async (msg) => {
+                console.log('Mock sendMessage:', msg);
+                return { success: true };
+            }
+        },
+        storage: {
+            local: {
+                get: async (keys) => {
+                    const res = {};
+                    const arrayKeys = Array.isArray(keys) ? keys : [keys];
+                    arrayKeys.forEach(k => {
+                        const val = localStorage.getItem('mock_chrome_' + k);
+                        try {
+                            res[k] = val ? JSON.parse(val) : undefined;
+                        } catch (e) {
+                            res[k] = val;
+                        }
+                    });
+                    // Seed default mock policies if none exist
+                    if (keys.includes('policies') && (res.policies === undefined || res.policies === null)) {
+                        res.policies = [
+                            {
+                                id: 'policy_1',
+                                name: 'Social Media Limit',
+                                enabled: true,
+                                matches: ['*youtube.com*', '*facebook.com*', '*instagram.com*'],
+                                trackingMode: 'aggregate',
+                                rules: [{ limitMinutes: 30, days: [1, 2, 3, 4, 5] }],
+                                pauseSettings: { enabled: true, maxPausesPerDay: 2, durationMinutes: 5 }
+                            },
+                            {
+                                id: 'policy_2',
+                                name: 'Streaming & Gaming',
+                                enabled: false,
+                                matches: ['*netflix.com*', '*twitch.tv*'],
+                                trackingMode: 'per-site',
+                                rules: [{ limitMinutes: 60, days: [0, 6] }],
+                                pauseSettings: { enabled: false, maxPausesPerDay: 0, durationMinutes: 0 }
+                            }
+                        ];
+                        localStorage.setItem('mock_chrome_policies', JSON.stringify(res.policies));
+                    }
+                    if (keys.includes('challengeEnabled') && res.challengeEnabled === undefined) {
+                        res.challengeEnabled = false;
+                    }
+                    return res;
+                },
+                set: async (data) => {
+                    for (const k in data) {
+                        localStorage.setItem('mock_chrome_' + k, JSON.stringify(data[k]));
+                    }
+                    return {};
+                }
+            }
+        }
+    };
+}
+
 let currentPolicies = [];
 let challengeEnabled = false;
-let pendingAction = null; // 'save' or 'delete'
+let pendingAction = null; // 'save' or 'delete' or 'toggle-status'
+let pendingToggleInfo = null; // { policyId, enabled, inputElement }
+
 
 const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const CHALLENGE_TEXTS = [
@@ -53,6 +118,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('pauseEnabled').addEventListener('change', (e) => {
         togglePauseSettings(e.target.checked);
     });
+
+    // Dynamic Policy Enabled Label
+    document.getElementById('policyEnabled').addEventListener('change', updateModalEnabledLabel);
 });
 
 function togglePauseSettings(enabled) {
@@ -63,6 +131,19 @@ function togglePauseSettings(enabled) {
     } else {
         container.style.opacity = '0.3';
         container.style.pointerEvents = 'none';
+    }
+}
+
+function updateModalEnabledLabel() {
+    const input = document.getElementById('policyEnabled');
+    const label = document.getElementById('policyEnabledLabel');
+    if (!label) return;
+    if (input.checked) {
+        label.textContent = 'Policy Active';
+        label.style.color = '#10b981'; // Green
+    } else {
+        label.textContent = 'Policy Inactive';
+        label.style.color = '#64748b'; // Gray
     }
 }
 
@@ -215,29 +296,75 @@ function renderPolicies() {
 
     currentPolicies.forEach(policy => {
         const card = document.createElement('div');
-        card.className = 'policy-card';
+        const isActive = policy.enabled !== false;
+        card.className = `policy-card ${isActive ? 'active' : 'disabled'}`;
         card.onclick = () => openModal(policy);
 
         const rulesCount = (policy.rules || []).length;
         const domainsStr = (policy.matches || []).join(', ');
 
-        const trackingBadgeStr = policy.trackingMode === 'per-site' ? '<span style="font-size:10px; padding:2px 6px; border-radius:10px; background:#e0e7ff; color:#3730a3; margin-left: 6px;">Per-Website</span>' : '<span style="font-size:10px; padding:2px 6px; border-radius:10px; background:#f1f5f9; color:#475569; margin-left: 6px;">Aggregate</span>';
-        const disabledBadgeStr = policy.enabled === false ? '<span style="font-size:10px; padding:2px 6px; border-radius:10px; background:#fee2e2; color:#b91c1c; margin-left: 6px;">Disabled</span>' : '';
+        const trackingBadge = policy.trackingMode === 'per-site' 
+            ? `<span class="badge badge-info">Per-Website</span>` 
+            : `<span class="badge badge-secondary">Aggregate</span>`;
+
+        const statusBadge = isActive 
+            ? `<span class="status-badge active"><span class="pulse-dot"></span>Active</span>` 
+            : `<span class="status-badge inactive">Inactive</span>`;
 
         card.innerHTML = `
-      <div class="policy-name" style="display:flex; align-items:center;">
-        ${escapeHtml(policy.name)} 
-        ${trackingBadgeStr}
-        ${disabledBadgeStr}
-      </div>
-      <div class="policy-domains">${escapeHtml(domainsStr)}</div>
-      <div class="policy-rules-summary">
-        ${rulesCount} rule(s) • ${policy.pauseSettings?.enabled !== false ? (policy.pauseSettings?.maxPausesPerDay || 0) + ' pauses/day' : 'Pauses disabled'}
-      </div>
-    `;
+            <div class="policy-card-header">
+                <div class="policy-name-section">
+                    <div class="policy-name">${escapeHtml(policy.name)}</div>
+                    <div class="policy-badges">
+                        ${statusBadge}
+                        ${trackingBadge}
+                    </div>
+                </div>
+                <div class="policy-card-controls">
+                    <label class="switch card-switch" title="${isActive ? 'Disable policy' : 'Enable policy'}">
+                        <input type="checkbox" class="policy-toggle-input" ${isActive ? 'checked' : ''}>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="policy-domains">${escapeHtml(domainsStr || 'No websites configured')}</div>
+            <div class="policy-rules-summary">
+                ${rulesCount} rule(s) • ${policy.pauseSettings?.enabled !== false ? (policy.pauseSettings?.maxPausesPerDay || 0) + ' pauses/day' : 'Pauses disabled'}
+            </div>
+        `;
+
+        const toggleInput = card.querySelector('.policy-toggle-input');
+        toggleInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+        toggleInput.addEventListener('change', async (e) => {
+            e.stopPropagation();
+            const isChecked = e.target.checked;
+            if (challengeEnabled) {
+                pendingToggleInfo = {
+                    policyId: policy.id,
+                    enabled: isChecked,
+                    inputElement: toggleInput
+                };
+                openChallenge('toggle-status');
+                // Revert visual checked status immediately; it will be updated by renderPolicies() if challenge succeeds
+                toggleInput.checked = !isChecked;
+            } else {
+                await executeToggleStatus(policy.id, isChecked);
+            }
+        });
 
         container.appendChild(card);
     });
+}
+
+async function executeToggleStatus(policyId, enabled) {
+    const existingIdx = currentPolicies.findIndex(p => p.id === policyId);
+    if (existingIdx >= 0) {
+        currentPolicies[existingIdx].enabled = enabled;
+        await chrome.storage.local.set({ policies: currentPolicies });
+        renderPolicies();
+    }
 }
 
 function openModal(policy = null) {
@@ -282,6 +409,7 @@ function openModal(policy = null) {
         deleteBtn.classList.add('hidden');
     }
 
+    updateModalEnabledLabel();
     modal.classList.remove('hidden');
 }
 
@@ -374,6 +502,7 @@ function openChallenge(action) {
 function closeChallenge() {
     document.getElementById('challengeModal').classList.add('hidden');
     pendingAction = null;
+    pendingToggleInfo = null;
 }
 
 function renderChallengeText(typedVal) {
@@ -422,6 +551,9 @@ function handleChallengeInput(e) {
         setTimeout(() => {
             if (pendingAction === 'save') executeSave();
             if (pendingAction === 'delete') executeDelete();
+            if (pendingAction === 'toggle-status' && pendingToggleInfo) {
+                executeToggleStatus(pendingToggleInfo.policyId, pendingToggleInfo.enabled);
+            }
             closeChallenge();
         }, 500);
     }

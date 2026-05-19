@@ -105,23 +105,55 @@ h1 {
     border-radius: 16px;
     padding: 24px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    border: 1px solid #f1f5f9;
-    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid #e2e8f0;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     display: flex;
     flex-direction: column;
+    position: relative;
+}
+
+.policy-card.active {
+    border-left: 4px solid #10b981;
+}
+
+.policy-card.disabled {
+    border-left: 4px solid #94a3b8;
+    background-color: #f8fafc;
+    opacity: 0.75;
 }
 
 .policy-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+.policy-card.disabled:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 10px -3px rgba(0, 0, 0, 0.05);
+    opacity: 0.9;
+}
+
+.policy-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.policy-name-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .policy-name {
     font-size: 18px;
     font-weight: 600;
-    margin-bottom: 8px;
-    color: #1e293b;
+    margin-bottom: 0;
+    color: #0f172a;
+    line-height: 1.3;
 }
 
 .policy-domains {
@@ -495,4 +527,92 @@ input:checked+.slider:before {
 
 .slider.round:before {
     border-radius: 50%;
+}
+
+/* Policy Card enhancements & Badges */
+.policy-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-badge.active {
+    background-color: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.status-badge.inactive {
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.pulse-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    animation: pulse-animation 1.6s infinite;
+}
+
+@keyframes pulse-animation {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    }
+}
+
+.badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 9999px;
+}
+
+.badge-info {
+    background-color: #e0e7ff;
+    color: #3730a3;
+    border: 1px solid #c7d2fe;
+}
+
+.badge-secondary {
+    background-color: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.policy-card-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-switch {
+    transform: scale(0.85);
+    margin-right: -4px;
 }
