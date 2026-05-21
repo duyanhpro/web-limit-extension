@@ -333,6 +333,13 @@ function renderPolicies() {
             </div>
         `;
 
+        const cardSwitch = card.querySelector('.card-switch');
+        if (cardSwitch) {
+            cardSwitch.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
+
         const toggleInput = card.querySelector('.policy-toggle-input');
         toggleInput.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -340,6 +347,13 @@ function renderPolicies() {
         toggleInput.addEventListener('change', async (e) => {
             e.stopPropagation();
             const isChecked = e.target.checked;
+
+            const confirmed = confirm(`Are you sure you want to ${isChecked ? 'enable' : 'disable'} the policy "${policy.name}"?`);
+            if (!confirmed) {
+                toggleInput.checked = !isChecked;
+                return;
+            }
+
             if (challengeEnabled) {
                 pendingToggleInfo = {
                     policyId: policy.id,
